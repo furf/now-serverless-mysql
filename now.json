@@ -3,7 +3,7 @@
   "name": "now-serverless-mysql",
   "alias": "now-serverless-mysql.now.sh",
   "builds": [
-    { "src": "api/*/*.js", "use": "@now/node" },
+    { "src": "api/**/*.js", "use": "@now/node" },
     { "src": "next.config.js", "use": "@now/next" }
   ],
   "routes": [
