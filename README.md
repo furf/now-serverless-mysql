@@ -65,14 +65,13 @@ $ mysql -u demo -p zeit < zeit.sql
 Create a directory and initialize your project with [npm](https://www.npmjs.com/get-npm). (You can alternatively use [Yarn](https://yarnpkg.com/en/docs/install).)
 
 ```shell
-$ mkdir now-serverless-mysql
-$ cd now-serverless-mysql
+$ mkdir now-serverless-mysql && cd now-serverless-mysql
 $ npm init -y
 ```
 
 ### Configure the Deployment
 
-All Now deployments require the use of a `now.json` [configuration file](https://zeit.co/docs/v2/deployments/configuration/). This file describes how your project (and its parts) should be built and deployed.
+All Now deployments require the use of a `now.json` [configuration file](https://zeit.co/docs/v2/deployments/configuration/). This file describes how your project (and its parts) should be built and deployed on the Now platform.
 
 _now.json_
 
@@ -81,7 +80,7 @@ _now.json_
   "version": 2,
   "name": "now-serverless-mysql",
   "builds": [
-    { "src": "api/*/*.js", "use": "@now/node" }
+    { "src": "api/**/*.js", "use": "@now/node" }
   ]
 }
 ```
@@ -104,7 +103,7 @@ $ npm install --save-exact serverless-mysql
 
 ### Connect to the Database
 
-Since you're likely to create more than one endpoint that will use your database connection, it is sensible to create a reusable interface. This example uses configuration parameters that are provided to the application using [environment variables](https://zeit.co/docs/v2/deployments/environment-variables-and-secrets/). There are a number of ways to provide environment variables to an application, but we will populate them later when we deploy the API using the Now CLI.
+Since you're likely to create more than one endpoint that will use your database connection, it is sensible to create a reusable interface. This example uses configuration parameters that are provided to the application using [environment variables](https://zeit.co/docs/v2/deployments/environment-variables-and-secrets/). There are a [other](https://www.npmjs.com/package/dotenv) [ways](https://www.npmjs.com/package/cross-env) to provide environment variables to a Node.js application, but we will [populate them using the Now CLI](https://zeit.co/blog/environment-variables-secrets) when we deploy the API.
 
 _db.js_
 
@@ -133,9 +132,9 @@ exports.query = async (query) => {
 
 ### Create the API Endpoints
 
-Each endpoint is served as a serverless function, or [Lambda](https://zeit.co/docs/v2/deployments/concepts/lambdas/). To handle HTTP requests, your module should export an [asynchronous function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function) capable of handling two arguments, [request](https://nodejs.org/api/http.html#http_event_request) and [response](https://nodejs.org/api/http.html#http_class_http_serverresponse).
+Each endpoint is deployed and served as a serverless function, or [Lambda](https://zeit.co/docs/v2/deployments/concepts/lambdas/). To handle HTTP requests, your module should export an [asynchronous function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function) capable of handling two arguments, [request](https://nodejs.org/api/http.html#http_event_request) and [response](https://nodejs.org/api/http.html#http_class_http_serverresponse).
 
-In our first `users` endpoint, we perform a simple query using our database abstraction and return the results as JSON. The following endpoint will be available as `/api/users` in our deployment.
+In the first `users` endpoint, we perform a simple query using our database abstraction and return the results as JSON. The following endpoint will be available as `/api/users` in our deployment.
 
 _api/users/index.js_
 
@@ -151,7 +150,7 @@ module.exports = async (req, res) => {
 }
 ```
 
-In this endpoint, we will parse the URL query and extract the `id` parameter to populate our user query. 
+In the second endpoint, we will parse the URL query and extract the `id` parameter to populate our `user` query. 
 
 _api/users/user.js_
 
@@ -183,12 +182,16 @@ Before we continue, did you catch the glaring security error in the above code? 
 
 To prevent this type of attack, we can [use a paramaterized query](https://blogs.msdn.microsoft.com/sqlphp/2008/09/30/how-and-why-to-use-parameterized-queries/). A parameterized query uses placeholders for parameters and supplies escaped values when the query is executed. (This has a side benefit of sparing you from having to escape quotes in your values.)
 
-As with most things in the JavaScript ecosystem, there exists already a module for parameterizing SQL queries. [SQL Template Strings](https://github.com/felixfbecker/node-sql-template-strings) provides a [tag function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#Tagged_templates) which will convert your [template literal](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals) SQL statement into an object which can be safely consumed by the `mysql` module.
+As with most things in the JavaScript ecosystem, there already exists a module for parameterizing SQL queries. [SQL Template Strings](https://github.com/felixfbecker/node-sql-template-strings) provides a [tag function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#Tagged_templates) which will convert your [template literal](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals) SQL statement into an object which can be safely consumed by the `mysql` module.
+
+Dangerous:
 
 ```js
 console.log(`INSERT INTO Students(Name) VALUES('${studentName}');`);
 "INSERT INTO Students(Name) VALUES('Robert'); DROP TABLE Students;--');"
 ```
+
+Safe:
 
 ```js
 console.log(sql`INSERT INTO Students(Name) VALUES('${studentName}');`);
@@ -206,7 +209,7 @@ Add the `sql-template-strings` module to your project.
 $ npm install --save-exact sql-template-strings
 ```
 
-Import the module into your API endpoint and tag your query.
+Import the module into your API endpoint and tag your SQL statement.
 
 _api/users/user.js_
 
@@ -228,11 +231,11 @@ module.exports = async (req, res) => {
 }
 ```
 
-That's it. The update is so subtle, you might just miss it!
+That's it! The update is so subtle, you might just miss it.
 
 ### Add Custom Routing
 
-If we deploy the API as is, our `users` and `user` endpoints would be available at `/api/users` and `/api/users/user.js?id=$id` respectively. The latter path does not resemble the more familiar [RESTful](https://en.wikipedia.org/wiki/Representational_state_transfer) format of `/api/users/$id`. Fortunately, Now supports custom routing and we can modify our route with a single-line change to our Now configuration file.
+If we deploy the API as is, our `users` and `user` endpoints would be available at `/api/users` and `/api/users/user.js?id=$id` respectively. The latter path does not resemble the more familiar [RESTful](https://en.wikipedia.org/wiki/Representational_state_transfer) format of `/api/users/$id`. Fortunately, Now supports [custom routing](https://zeit.co/docs/v2/deployments/routes) with [route parameters](https://zeit.co/docs/v2/deployments/routes/#route-parameters) that we can use to modify our route with a single-line change to our Now configuration file.
 
 _now.json_
 
@@ -248,7 +251,7 @@ The [routes](https://zeit.co/docs/v2/deployments/configuration/#routes) property
 
 ### Deploy the API
 
-Deploy the API using the Now CLI, passing the environment variables as arguments to the `now` command.
+In your terminal, deploy the API using the Now CLI, passing the environment variables as arguments to the `now` command using the `-e` or `--env` option.
 
 ```shell
 $ now -e MYSQL_HOST=35.233.224.228 -e MYSQL_DATABASE=zeit -e MYSQL_USER=demo -e MYSQL_PASSWORD=ioB2BA84TVmJ7Dyg
@@ -272,7 +275,7 @@ The API is now deployed, and the [/api/users](https://now-serverless-mysql-qzrhv
 
 If you only need an API, you're finished. _Class dismissed!_
 
-However, if you would like to learn how to include your Serverless MySQL API in a functional web application, continue on to the next section where we will demonstrate how to use [`isomorphic-unfetch`](https://github.com/developit/unfetch/tree/master/packages/isomorphic-unfetch) to perform server-side and client-side rendering of MySQL data.
+However, if you would like to learn how to include your Serverless MySQL API in a functional web application, continue on to the next step where we will demonstrate how to use [`isomorphic-unfetch`](https://github.com/developit/unfetch/tree/master/packages/isomorphic-unfetch) to perform server-side and client-side rendering of MySQL data.
 
 ## Step 3: Create Your App
 
@@ -312,7 +315,7 @@ _now.json_
 }
 ```
 
-Finally, include a script in our `package.json` named `now-build` that instructs Now how to "build" the application.
+Finally, include a script in our `package.json` named `now-build` that instructs Now how to build the application.
 
 _package.json_
 
@@ -366,7 +369,7 @@ HomePage.getInitialProps = async ({ req }) => {
 export default HomePage
 ```
 
-Note in the `HomePage.getInitialProps` method that the host is determined differently on the server and on the client. In a standard client app, a relative path to the API, e.g. `/api/users`, would suffice. However, when the page renders on the server, it requires an absolute path to the API. Since Now deployments are immutable and the host domain changes with each deployment, the host must be parsed from the HTTP request headers.
+Note in the `HomePage.getInitialProps` method that the host is determined differently on the server and on the client. In a standard client app, a relative path to the API, e.g. `/api/users`, would suffice. However, when the page renders on the server, there is not a URL to be "relative" to, so it requires an absolute path to the API. Since Now deployments are immutable and the host domain changes with each deployment, the host must be parsed from the HTTP request headers.
 
 Next, create the user detail page. This page fetches user-specific data from the API and renders it.
 
@@ -425,7 +428,7 @@ _package.json_
 $ npm run deploy
 ```
 
-Once you see `Success! Deployment ready`, your app will be online and ready.
+Once you see `Success! Deployment ready`, your app is online and ready.
 
 ## Bonus: Alias the Deployment
 
@@ -437,7 +440,7 @@ The `now alias` command [makes a deployment available](https://zeit.co/docs/v2/d
 $ now alias now-serverless-mysql.now.sh
 ```
 
-You can optionally store one or more default target aliases in the Now configuration file and deploy more succinctly.
+You can optionally store one or more default target aliases in the Now configuration file and deploy more succinctly. The [alias](https://zeit.co/docs/v2/deployments/configuration/#alias) property instructs Now to use [now-serverless-mysql.now.sh](https://now-serverless-mysql.now.sh) as the default target.
 
 _now.json_
 
@@ -447,8 +450,8 @@ _now.json_
 }
 ```
 
-The [alias](https://zeit.co/docs/v2/deployments/configuration/#alias) property instructs Now to use [now-serverless-mysql.now.sh](https://now-serverless-mysql.now.sh) as the default target.
-
 ```shell
 $ now alias
 ```
+
+Congratulations! You just built and deployed a completely serverless application using Serverless MySQL and Now.
