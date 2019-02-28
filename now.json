@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "name": "now-serverless-mysql",
+  "alias": "now-serverless-mysql.now.sh",
+  "builds": [
+    { "src": "api/*/*.js", "use": "@now/node" },
+    { "src": "next.config.js", "use": "@now/next" }
+  ],
+  "routes": [
+    { "src": "/api/users/(?<id>[^/]*)", "dest": "api/users/user.js?id=$id"}
+  ]
+}

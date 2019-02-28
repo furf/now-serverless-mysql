@@ -1,0 +1,22 @@
+{
+  "name": "now-serverless-mysql",
+  "version": "1.0.0",
+  "description": "An example of Serverless MySQL running on Now",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "next",
+    "deploy": "now -e MYSQL_HOST=35.233.224.228 -e MYSQL_DATABASE=zeit -e MYSQL_USER=demo -e MYSQL_PASSWORD=ioB2BA84TVmJ7Dyg",
+    "now-build": "next build"
+  },
+  "keywords": [],
+  "author": "David Furfero <furf@furf.com>",
+  "license": "ISC",
+  "dependencies": {
+    "isomorphic-unfetch": "3.0.0",
+    "next": "8.0.1",
+    "react": "16.8.3",
+    "react-dom": "16.8.3",
+    "serverless-mysql": "1.2.1",
+    "sql-template-strings": "2.2.2"
+  }
+}
