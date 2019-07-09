@@ -13,7 +13,7 @@ In this guide, we will demonstrate how to set up a basic serverless web applicat
 
 This guide requires that you have [Node.js](https://nodejs.org/en/download/) and the [Now CLI](https://github.com/zeit/now-cli) installed on your local development machine and that you have [an active ZEIT account](https://zeit.co/onboarding).
 
-###Set Up the Database
+### Set Up the Database
 
 This guide also presupposes that you have a MySQL database hosted remotely. In order for your Serverless API to query the database, you will need to authorize requests from ZEIT's IP address(es).
 
